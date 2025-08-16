@@ -1,45 +1,92 @@
-# Tmux Setup — Commands & Usage Guide
+# Tmux Configuration — Complete Usage Guide
 
-This README documents how to use your tmux setup as configured in `~/.config/tmux/tmux.conf`. It includes a quick-start cheat sheet, plugin sections, and installation instructions. **All key bindings below reflect your exact config.**
+This README documents your tmux setup as configured in `~/.config/tmux/tmux.conf`. It includes key bindings, plugin documentation, session management, and installation---
 
-> **Prefix**: `Ctrl-Space` (you unbound the default `Ctrl-b`).
+## Session Persistence & Recovery
+
+Your tmux setup includes powerful session persistence through two complementary plugins:
+
+### Automatic Session Management
+* **tmux-continuum** automatically saves your session every 15 minutes
+* Sessions are **automatically restored** when you start tmux
+* Works silently in the background - no action needed from you
+* Your work environment persists across reboots and tmux restarts
+
+### Manual Session Control
+* **Quick save**: `Prefix` + `Ctrl-s` (saves immediately)
+* **Quick restore**: `Prefix` + `Ctrl-r` (restores last saved state)
+* Useful for creating manual checkpoints before major changes
+
+### What Gets Preserved
+* **Layout**: All windows, panes, and their exact arrangement
+* **Directories**: Each pane's current working directory
+* **Content**: Visible text in each pane (scrollback)
+* **Programs**: Running processes in each pane
+* **Editor sessions**: Vim/Neovim sessions (when using session files)
+
+### File Locations
+* Session data stored in: `~/.tmux/resurrect/`
+* Last saved session: `~/.tmux/resurrect/last`
+* Automatic saves: `~/.tmux/resurrect/tmux_resurrect_*.txt`
 
 ---
 
-## TL;DR Cheat Sheet (Most Used)
+## Tips & Troubleshooting
 
-**Pane navigation**
+### General Issues
+* **Alt‑arrow keys don't work?** Your terminal may capture them. Disable "Alt sends escape" or similar in terminal settings, or use Vim‑style `Prefix` + `h/j/k/l` instead.
+* **Colors look wrong?** If `tmux-256color` is unknown on remote hosts, temporarily set `set -g default-terminal "xterm-256color"` or install ncurses-term package.
 
-* With *no* prefix: `Alt-←/→/↑/↓` → move focus left/right/up/down
-* With prefix (Vim-style): `h/j/k/l` → move left/down/up/right
+### Clipboard Issues  
+* **tmux-yank not working?** Ensure you have the right clipboard tool:
+  - **X11**: Install `xclip` or `xsel`
+  - **Wayland**: Install `wl-clipboard` (`wl-copy`, `wl-paste`)
+  - **SSH**: May need X11 forwarding (`ssh -X`) or remote clipboard tools
 
-**Windows**
+### Session Persistence Issues
+* **Sessions not auto-restoring?** Check that tmux-continuum is installed: `ls ~/.tmux/plugins/tmux-continuum`
+* **Manual restore not working?** Verify session files exist: `ls ~/.tmux/resurrect/`
+* **Programs not restored correctly?** Some programs may need manual restart; resurrect focuses on layout and basic processes
+* **Vim sessions not working?** Ensure you're using `:mksession` in Vim/Neovim to create session files
 
-* Previous / Next window: `Shift-←` / `Shift-→` *(no prefix)*
-* Also prev/next: `Alt-H` / `Alt-L` *(no prefix)*
-* Windows and panes start at **1**; numbers renumber automatically on close
+### Nested tmux Sessions
+* **Send prefix to inner tmux**: Press `Prefix` twice (`Ctrl-b` then `Ctrl-b` again)
+* Useful when SSH'd into another machine running tmuxuctions.
 
-**Splits (keep current directory)**
+> **Prefix**: `Ctrl-b` (default tmux prefix)
 
-* Vertical split: `Prefix` + `"`
-* Horizontal split: `Prefix` + `%`
+---
 
-**Copy mode (vi)**
+## Quick Reference Cheat Sheet
 
-* Enter copy-mode: `Prefix` + `[`
-* Start selection: `v`  ·  Rectangle toggle: `Ctrl-v`  ·  Copy + exit: `y`
-* Paste last buffer: `Prefix` + `]`
+### Pane Navigation
+* **No prefix**: `Alt-←/→/↑/↓` → move focus between panes
+* **Vim-style** (with prefix): `Prefix` + `h/j/k/l` → move left/down/up/right
 
-**Detach / Sessions**
+### Window Management
+* **Switch windows**: `Shift-←/→` or `Alt-H/L` *(no prefix needed)*
+* Windows and panes start at **1**; auto-renumber when closed
 
-* Detach: `Prefix` + `d`
-* List sessions: `tmux ls`
-* Attach to session: `tmux attach -t <name>`
-* Create new: `tmux new -s <name>`
+### Splitting Panes (preserves current directory)
+* **Vertical split**: `Prefix` + `"`
+* **Horizontal split**: `Prefix` + `%`
 
-**Nested tmux (send prefix to inner)**
+### Copy Mode (vi-style)
+* **Enter copy-mode**: `Prefix` + `[`
+* **Start selection**: `v` · **Rectangle**: `Ctrl-v` · **Copy & exit**: `y`
+* **Paste**: `Prefix` + `]`
 
-* Send a literal prefix: `Prefix` then `Ctrl-Space` (i.e., **`Ctrl-Space` → `Ctrl-Space`**)
+### Session Management & Persistence
+* **Save session**: `Prefix` + `Ctrl-s` *(manual save)*
+* **Restore session**: `Prefix` + `Ctrl-r` *(manual restore)*
+* **Auto-save**: Every 15 minutes *(automatic with continuum)*
+* **Auto-restore**: On tmux startup *(automatic with continuum)*
+
+### Basic Session Commands
+* **Detach**: `Prefix` + `d`
+* **List sessions**: `tmux ls`
+* **Attach to session**: `tmux attach -t <name>`
+* **Create new session**: `tmux new -s <name>`
 
 ---
 
@@ -56,7 +103,7 @@ This README documents how to use your tmux setup as configured in `~/.config/tmu
 
 ### Prefix & Navigation
 
-* Prefix is **`Ctrl-Space`**.
+* Prefix is **`Ctrl-b`** (default tmux prefix).
 * Vim-style pane moves **after prefix**: `h`, `j`, `k`, `l`.
 * Global, no‑prefix pane moves via **Alt + arrows**.
 * Window navigation shortcuts without prefix: `Shift-←/→` and `Alt-H/L`.
@@ -131,6 +178,48 @@ Applies a Monokai Pro theme to tmux. Loads automatically via TPM; no extra steps
 
 ---
 
+### tmux-resurrect
+
+Saves and restores tmux sessions, including:
+- All sessions, windows, and pane layouts
+- Each pane's current working directory  
+- Pane contents (text displayed in each pane)
+- Running programs in each pane
+- Vim/Neovim sessions (when properly configured)
+
+**Manual Usage:**
+* **Save session**: `Prefix` + `Ctrl-s`
+* **Restore session**: `Prefix` + `Ctrl-r`
+
+**What gets saved:**
+- Window and pane structure
+- Current working directories
+- Pane contents (terminal output)
+- Running processes
+- Vim/Neovim sessions (with session files)
+
+---
+
+### tmux-continuum
+
+Automatic session management that works with tmux-resurrect:
+- **Auto-saves** sessions every 15 minutes
+- **Auto-restores** sessions when tmux starts
+- Works seamlessly in the background
+
+**Features:**
+- No manual intervention needed
+- Sessions persist across system reboots
+- Configurable save intervals
+- Status line integration available
+
+**Configuration:**
+- Save interval: 15 minutes
+- Auto-restore: Enabled on tmux startup
+- Works with tmux-resurrect settings
+
+---
+
 ## Installation
 
 1. **Install tmux**
@@ -181,43 +270,47 @@ Applies a Monokai Pro theme to tmux. Loads automatically via TPM; no extra steps
 
 ---
 
-## Command Reference (Flat List)
+## Command Reference (Complete List)
 
-**Prefix**: `Ctrl-Space`
+**Prefix**: `Ctrl-b`
 
-**Pane focus (no prefix)**
-
+### Pane Navigation
+**No prefix required:**
 * `Alt-←/→/↑/↓` → select pane
 
-**Pane focus (with prefix)**
+**With prefix:**
+* `h` / `j` / `k` / `l` → select pane Left/Down/Up/Right
 
-* `h` / `j` / `k` / `l` → select pane L/D/U/R
-
-**Windows (no prefix)**
-
+### Window Management
+**No prefix required:**
 * `Shift-←` / `Shift-→` → previous / next window
 * `Alt-H` / `Alt-L` → previous / next window
 
-**Splits (keep CWD)**
-
+### Pane Splitting (preserves current directory)
 * `Prefix` + `"` → vertical split
 * `Prefix` + `%` → horizontal split
 
-**Copy-mode (vi)**
+### Copy Mode (vi-style)
+* **Enter**: `Prefix` + `[` · **Paste**: `Prefix` + `]`
+* **In copy-mode**: `v` select · `Ctrl-v` rectangle · `y` copy & exit
 
-* Enter: `Prefix` + `[`  ·  Paste: `Prefix` + `]`
-* In copy-mode: `v` select · `Ctrl-v` rectangle · `y` copy & exit
+### Session Management
+**Basic sessions:**
+* **Detach**: `Prefix` + `d`
+* **List**: `tmux ls`
+* **Attach**: `tmux attach -t <name>`
+* **New**: `tmux new -s <name>`
 
-**Sessions**
+**Session persistence (tmux-resurrect):**
+* **Save session**: `Prefix` + `Ctrl-s`
+* **Restore session**: `Prefix` + `Ctrl-r`
+* **Auto-save**: Every 15 minutes (tmux-continuum)
+* **Auto-restore**: On tmux startup (tmux-continuum)
 
-* Detach: `Prefix` + `d`
-* List: `tmux ls`
-* Attach: `tmux attach -t <name>`
-* New: `tmux new -s <name>`
-
-**TPM**
-
-* Install: `Prefix` + `I` · Update: `Prefix` + `U` · Clean: `Prefix` + `Alt-u`
+### Plugin Management (TPM)
+* **Install plugins**: `Prefix` + `I`
+* **Update plugins**: `Prefix` + `U` 
+* **Clean unused**: `Prefix` + `Alt-u`
 
 ---
 
